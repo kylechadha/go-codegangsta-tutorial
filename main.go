@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -14,8 +15,9 @@ func main() {
 		port = "8080"
 	}
 
-	r := mux.NewRouter().StrictSlash(false)
-	r.HandleFunc("/", HomeHandler)
+	// r := mux.NewRouter().StrictSlash(false)
+	r := mux.NewRouter()
+	r.Handle("/", http.FileServer(http.Dir("public")))
 
 	// Posts Collection
 	posts := r.Path("/posts").Subrouter()
@@ -29,12 +31,42 @@ func main() {
 	post.Methods("PUT", "POST").HandlerFunc(PostUpdateHandler)
 	post.Methods("DELETE").HandlerFunc(PostDeleteHandler)
 
-	fmt.Println("The magic happens on port :%s\n", port)
+	fmt.Printf("The magic happens on port :%s\n", port)
 	http.ListenAndServe(":"+port, r)
 
-	// http.HandleFunc("/markdown", GenerateMarkdown)
+	// Old Routes & Handlers
+	http.HandleFunc("/markdown", GenerateMarkdown)
 	// http.Handle("/", http.FileServer(http.Dir("public")))
 	// http.ListenAndServe(":"+port, nil)
+}
+
+// func HomeHandler(rw http.ResponseWriter, r *http.Request) {
+// 	http.FileServer(http.Dir("./static/"))
+// }
+
+func PostsIndexHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(rw, "posts index")
+}
+
+func PostsCreateHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(rw, "posts create")
+}
+
+func PostShowHandler(rw http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	fmt.Fprintln(rw, "showing post", id)
+}
+
+func PostUpdateHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(rw, "post update")
+}
+
+func PostDeleteHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(rw, "post delete")
+}
+
+func PostEditHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(rw, "post edit")
 }
 
 func GenerateMarkdown(rw http.ResponseWriter, r *http.Request) {
