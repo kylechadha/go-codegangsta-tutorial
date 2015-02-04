@@ -12,34 +12,30 @@ import (
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	// ROUTES
-	// -------
+	// --------------
 	router := mux.NewRouter().StrictSlash(false)
-	router.Handle("/", http.FileServer(http.Dir("public")))
 
-	// Posts Collection
 	posts := router.Path("/posts").Subrouter()
 	posts.Methods("GET").HandlerFunc(PostsIndexHandler)
 	posts.Methods("POST").HandlerFunc(PostsCreateHandler)
 
-	// Posts Singular
 	post := router.PathPrefix("/posts/{id}").Subrouter()
 	post.Methods("GET").Path("/edit").HandlerFunc(PostEditHandler)
 	post.Methods("GET").HandlerFunc(PostShowHandler)
 	post.Methods("PUT", "POST").HandlerFunc(PostUpdateHandler)
 	post.Methods("DELETE").HandlerFunc(PostDeleteHandler)
 
-	// Markdown
 	markdown := router.Path("/markdown").Subrouter()
 	markdown.Methods("POST").HandlerFunc(MarkdownHandler)
 
-	// MIDDLEWARE
-	// -----------
+	// CONFIG
+	// --------------
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	n := negroni.New(
 		negroni.NewRecovery(),
 		negroni.HandlerFunc(AppMiddleware),
@@ -49,25 +45,28 @@ func main() {
 	n.UseHandler(router)
 
 	// SERVER
-	// -------
-	fmt.Printf("The magic happens on port %s", port)
-	http.ListenAndServe(":"+port, router)
-	// n.Run(":" + port)
+	// --------------
+	n.Run(":" + port)
 }
 
+// MIDDLEWARE
+// ---------------
 func AppMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	log.Println("Logging in our middleware woot!")
 
 	// This is where you would do cool middleware stuff!
-	// if r.URL.Query().Get("password") == "secret123" {
-	next(rw, r)
-	// } else {
-	// http.Error(rw, "Not Authorized", 401)
-	// }
+	if r.URL.Query().Get("password") == "secret123" {
+		next(rw, r)
+	} else {
+		http.Error(rw, "Not Authorized", 401)
 
-	// log.Println("And here it comes back to the middleware")
+	}
+
+	log.Println("And here it comes back to the middleware")
 }
 
+// HANDLERS
+// ---------------
 func PostsIndexHandler(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(rw, "posts index")
 }
