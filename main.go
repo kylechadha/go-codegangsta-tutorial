@@ -20,6 +20,7 @@ func main() {
 	// ROUTES
 	// -------
 	router := mux.NewRouter().StrictSlash(false)
+	router.Handle("/", http.FileServer(http.Dir("public")))
 
 	// Posts Collection
 	posts := router.Path("/posts").Subrouter()
@@ -33,8 +34,9 @@ func main() {
 	post.Methods("PUT", "POST").HandlerFunc(PostUpdateHandler)
 	post.Methods("DELETE").HandlerFunc(PostDeleteHandler)
 
-	// Old Routes & Handlers
-	http.HandleFunc("/markdown", GenerateMarkdown)
+	// Markdown
+	markdown := router.Path("/markdown").Subrouter()
+	markdown.Methods("POST").HandlerFunc(MarkdownHandler)
 
 	// MIDDLEWARE
 	// -----------
@@ -48,24 +50,23 @@ func main() {
 
 	// SERVER
 	// -------
-	n.Run(":" + port)
+	fmt.Printf("The magic happens on port %s", port)
+	http.ListenAndServe(":"+port, router)
+	// n.Run(":" + port)
 }
 
 func AppMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	log.Println("Logging in our middleware woot!")
 
-	if r.URL.Query().Get("password") == "secret123" {
-		next(rw, r)
-	} else {
-		http.Error(rw, "Not Authorized", 401)
-	}
+	// This is where you would do cool middleware stuff!
+	// if r.URL.Query().Get("password") == "secret123" {
+	next(rw, r)
+	// } else {
+	// http.Error(rw, "Not Authorized", 401)
+	// }
 
-	log.Println("And now we seal the deal~~")
+	// log.Println("And here it comes back to the middleware")
 }
-
-// func HomeHandler(rw http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintln(rw, "Home")
-// }
 
 func PostsIndexHandler(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(rw, "posts index")
@@ -92,7 +93,7 @@ func PostEditHandler(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(rw, "post edit")
 }
 
-func GenerateMarkdown(rw http.ResponseWriter, r *http.Request) {
+func MarkdownHandler(rw http.ResponseWriter, r *http.Request) {
 	markdown := blackfriday.MarkdownCommon([]byte(r.FormValue("body")))
 	rw.Write(markdown)
 }
